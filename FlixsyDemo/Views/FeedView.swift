@@ -22,7 +22,7 @@ struct FeedView: View {
         .ignoresSafeArea()
         .task { await viewModel.loadVideos() }
         .sheet(item: $viewModel.selectedVideo) { video in
-            CommentsSheetView(videoId: video.id)
+            CommentsSheetView(video: video)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }

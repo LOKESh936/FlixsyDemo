@@ -4,8 +4,8 @@ struct CommentsSheetView: View {
     @StateObject private var viewModel: CommentsViewModel
     @FocusState private var isInputFocused: Bool
 
-    init(videoId: String) {
-        _viewModel = StateObject(wrappedValue: CommentsViewModel(videoId: videoId))
+    init(video: VideoPost) {
+        _viewModel = StateObject(wrappedValue: CommentsViewModel(video: video))
     }
 
     var body: some View {
@@ -60,18 +60,20 @@ struct CommentsSheetView: View {
 
     private var commentInput: some View {
         HStack(spacing: 10) {
-            TextField("Add a comment…", text: $viewModel.newCommentText)
+            TextField("Add a comment…", text: $viewModel.inputText)
                 .textFieldStyle(.roundedBorder)
                 .focused($isInputFocused)
                 .submitLabel(.send)
-                .onSubmit { viewModel.submitComment() }
+                .onSubmit { Task { await viewModel.addComment() } }
 
-            Button(action: viewModel.submitComment) {
+            Button {
+                Task { await viewModel.addComment() }
+            } label: {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 18))
-                    .foregroundStyle(viewModel.newCommentText.isEmpty ? .gray : .blue)
+                    .foregroundStyle(viewModel.inputText.isEmpty ? .gray : .blue)
             }
-            .disabled(viewModel.newCommentText.isEmpty)
+            .disabled(viewModel.inputText.isEmpty)
         }
         .padding()
     }
