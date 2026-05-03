@@ -3,26 +3,24 @@ import SwiftUI
 struct FeedView: View {
     @StateObject private var viewModel = FeedViewModel()
 
-    // Capture screen size once; avoids deprecated UIScreen.main inside view body
-    private let screen = UIScreen.main.bounds.size
-
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack {
+                Color.black.ignoresSafeArea()
 
-            if viewModel.isLoading {
-                ProgressView()
-                    .tint(.white)
-                    .scaleEffect(1.4)
-            } else if let error = viewModel.errorMessage, viewModel.videos.isEmpty {
-                errorView(message: error)
-            } else {
-                verticalFeed
+                if viewModel.isLoading {
+                    ProgressView()
+                        .tint(.white)
+                        .scaleEffect(1.4)
+                } else if let error = viewModel.errorMessage, viewModel.videos.isEmpty {
+                    errorView(message: error)
+                } else {
+                    verticalFeed(size: geo.size)
+                }
             }
         }
         .ignoresSafeArea()
         .task { await viewModel.loadVideos() }
-        // Comments sheet is driven by selectedVideo in the ViewModel — single source of truth
         .sheet(item: $viewModel.selectedVideo) { video in
             CommentsSheetView(videoId: video.id)
                 .presentationDetents([.medium, .large])
@@ -32,28 +30,36 @@ struct FeedView: View {
 
     // MARK: - Vertical paging feed
     //
-    // SwiftUI TabView pages horizontally. We rotate the TabView 90° CCW and
-    // counter-rotate each cell 90° CW so content stays upright — giving us
-    // native vertical paging with momentum and rubber-banding on iOS 16+.
+    // Uses ScrollView + scrollTargetBehavior(.paging) — the native iOS 17+
+    // vertical pager. No rotation hack, no UIScreen.main, works on iOS 26.
 
-    private var verticalFeed: some View {
-        TabView(selection: $viewModel.currentIndex) {
-            ForEach(Array(viewModel.videos.enumerated()), id: \.element.id) { index, video in
-                VideoFeedCellView(
-                    video: viewModel.videos[index],
-                    isVisible: viewModel.currentIndex == index,
-                    onLike: { viewModel.toggleLike(for: video) },
-                    onComment: { viewModel.openComments(for: video) }
-                )
-                .rotationEffect(.degrees(-90))
-                .frame(width: screen.width, height: screen.height)
-                .tag(index)
+    private func verticalFeed(size: CGSize) -> some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            LazyVStack(spacing: 0) {
+                ForEach(viewModel.videos) { video in
+                    VideoFeedCellView(
+                        video: viewModel.videos[videoIndex(video)],
+                        isVisible: viewModel.currentVideoId == video.id,
+                        onLike: { viewModel.toggleLike(for: video) },
+                        onComment: { viewModel.openComments(for: video) }
+                    )
+                    .frame(width: size.width, height: size.height)
+                    .id(video.id)
+                }
             }
+            .scrollTargetLayout()
         }
-        .frame(width: screen.height, height: screen.width)
-        .rotationEffect(.degrees(90), anchor: .topLeading)
-        .offset(x: screen.width)
-        .tabViewStyle(.page(indexDisplayMode: .never))
+        .scrollTargetBehavior(.paging)
+        .scrollPosition(id: $viewModel.currentVideoId)
+        .ignoresSafeArea()
+    }
+
+    // MARK: - Helpers
+
+    /// Returns the current index of a video in the array so the cell always
+    /// reads the latest like/comment state after an optimistic update.
+    private func videoIndex(_ video: VideoPost) -> Int {
+        viewModel.videos.firstIndex(where: { $0.id == video.id }) ?? 0
     }
 
     // MARK: - Error state

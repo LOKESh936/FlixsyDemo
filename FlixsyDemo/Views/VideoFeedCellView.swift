@@ -43,14 +43,15 @@ struct VideoFeedCellView: View {
                     .padding(.trailing, 12)
                     .padding(.bottom, 4)
                 }
-                .padding(.bottom, 28)
+                .padding(.bottom, 36)
                 .padding(.leading, 16)
             }
         }
-        .onChange(of: isVisible) { visible in
+        // iOS 17 onChange API — receives (oldValue, newValue)
+        .onChange(of: isVisible) { _, visible in
             visible ? looper.play() : looper.pause()
         }
-        .onAppear   { if isVisible { looper.play() } }
+        .onAppear    { if isVisible { looper.play() } }
         .onDisappear { looper.pause() }
     }
 
