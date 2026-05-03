@@ -1,25 +1,23 @@
 import SwiftUI
 
 // MARK: - FeedActionButtonsView
+//
+// Reusable right-side action rail. Accepts primitives instead of VideoPost
+// so it can be embedded anywhere without coupling to the feed data model.
 
 struct FeedActionButtonsView: View {
 
-    // MARK: - Inputs
-
-    let isLiked: Bool
-    let likeCount: Int
+    let isLiked:      Bool
+    let likeCount:    Int
     let commentCount: Int
-    let onLike: () -> Void
-    let onComment: () -> Void
+    let onLike:       () -> Void
+    let onComment:    () -> Void
 
-    // MARK: - Private state
-
+    // likeScale is local — the animation lives entirely inside this component.
     @State private var likeScale: CGFloat = 1.0
 
-    // MARK: - Body
-
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 22) {
             likeButton
             commentButton
             shareButton
@@ -30,14 +28,14 @@ struct FeedActionButtonsView: View {
 
     private var likeButton: some View {
         ActionButton(
-            icon: isLiked ? "heart.fill" : "heart",
+            icon:  isLiked ? "heart.fill" : "heart",
             label: likeCount.compactFormatted,
-            tint: isLiked ? .pink : .white
+            tint:  isLiked ? Color(hex: "#FF315F") : .white
         ) {
+            // Pop: overshoot up, then spring back
             withAnimation(.spring(response: 0.25, dampingFraction: 0.65)) {
                 likeScale = 1.4
             }
-            // Settle back after the overshoot
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
                 withAnimation(.spring(response: 0.25, dampingFraction: 0.65)) {
                     likeScale = 1.0
@@ -52,20 +50,20 @@ struct FeedActionButtonsView: View {
 
     private var commentButton: some View {
         ActionButton(
-            icon: "bubble.right",
-            label: commentCount.compactFormatted,
-            tint: .white,
+            icon:   "bubble.right",
+            label:  commentCount.compactFormatted,
+            tint:   .white,
             action: onComment
         )
     }
 
-    // MARK: - Share
+    // MARK: - Share (no-op in demo)
 
     private var shareButton: some View {
         ActionButton(
-            icon: "arrowshape.turn.up.right",
-            label: nil,
-            tint: .white,
+            icon:   "arrowshape.turn.up.right",
+            label:  nil,
+            tint:   .white,
             action: {}
         )
     }
@@ -74,16 +72,16 @@ struct FeedActionButtonsView: View {
 // MARK: - ActionButton
 
 private struct ActionButton: View {
-    let icon: String
-    let label: String?
-    let tint: Color
+    let icon:   String
+    let label:  String?
+    let tint:   Color
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 5) {
-                // Blurred circular background
                 ZStack {
+                    // Blurred circle adapts to any video content behind it
                     Circle()
                         .fill(.ultraThinMaterial)
                         .frame(width: 52, height: 52)
@@ -92,6 +90,7 @@ private struct ActionButton: View {
                     Image(systemName: icon)
                         .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(tint)
+                        // Crossfade when icon name changes (heart ↔ heart.fill)
                         .animation(.spring(response: 0.25, dampingFraction: 0.65), value: icon)
                 }
 
@@ -106,9 +105,10 @@ private struct ActionButton: View {
     }
 }
 
-// MARK: - Helpers
+// MARK: - Int formatting
 
 extension Int {
+    /// Compact display: 14200 → "14.2K", 1500000 → "1.5M"
     var compactFormatted: String {
         switch self {
         case 1_000_000...: return String(format: "%.1fM", Double(self) / 1_000_000)
