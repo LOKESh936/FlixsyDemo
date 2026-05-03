@@ -12,7 +12,7 @@ struct VideoFeedCellView: View {
         self.post = post
         self.isVisible = isVisible
         self.onLike = onLike
-        _looper = StateObject(wrappedValue: PlayerLooper(url: post.videoURL))
+        _looper = StateObject(wrappedValue: PlayerLooper(videoName: post.videoName))
     }
 
     var body: some View {
@@ -22,7 +22,6 @@ struct VideoFeedCellView: View {
             VideoPlayerView(player: looper.player)
                 .ignoresSafeArea()
 
-            // Bottom fade for readability
             LinearGradient(
                 colors: [.clear, .clear, .black.opacity(0.7)],
                 startPoint: .top,
@@ -50,10 +49,10 @@ struct VideoFeedCellView: View {
         .onChange(of: isVisible) { visible in
             visible ? looper.play() : looper.pause()
         }
-        .onAppear { if isVisible { looper.play() } }
+        .onAppear  { if isVisible { looper.play() } }
         .onDisappear { looper.pause() }
         .sheet(isPresented: $showComments) {
-            CommentsSheetView(postID: post.id)
+            CommentsSheetView(videoId: post.id)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
@@ -61,14 +60,20 @@ struct VideoFeedCellView: View {
 
     private var postInfo: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(post.username)
+            Text(post.userDisplayName)
                 .font(.headline.weight(.bold))
                 .foregroundStyle(.white)
-            Text(post.description)
+            Text(post.username)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.white.opacity(0.75))
+            Text(post.caption)
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.9))
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
+            Label(post.audioTitle, systemImage: "music.note")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.8))
         }
         .shadow(color: .black.opacity(0.5), radius: 4)
         .padding(.bottom, 4)

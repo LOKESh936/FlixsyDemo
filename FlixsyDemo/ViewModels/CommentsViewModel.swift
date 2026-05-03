@@ -4,13 +4,14 @@ import Foundation
 final class CommentsViewModel: ObservableObject {
     @Published var comments: [Comment] = []
     @Published var isLoading = false
+    @Published var isSubmitting = false
     @Published var newCommentText = ""
 
-    private let postID: String
+    private let videoId: String
     private let service: FeedServiceProtocol
 
-    init(postID: String, service: FeedServiceProtocol = MockFeedService()) {
-        self.postID = postID
+    init(videoId: String, service: FeedServiceProtocol = MockFeedService()) {
+        self.videoId = videoId
         self.service = service
     }
 
@@ -18,7 +19,7 @@ final class CommentsViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
-            comments = try await service.fetchComments(for: postID)
+            comments = try await service.fetchComments(videoId: videoId)
         } catch {
             // no-op for demo
         }
@@ -26,9 +27,18 @@ final class CommentsViewModel: ObservableObject {
 
     func submitComment() {
         let text = newCommentText.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty else { return }
-        let new = Comment(id: UUID().uuidString, username: "@you", text: text, timestamp: Date())
-        comments.insert(new, at: 0)
+        guard !text.isEmpty, !isSubmitting else { return }
         newCommentText = ""
+        isSubmitting = true
+
+        Task {
+            defer { isSubmitting = false }
+            do {
+                let comment = try await service.addComment(videoId: videoId, text: text)
+                comments.insert(comment, at: 0)
+            } catch {
+                // no-op for demo
+            }
+        }
     }
 }

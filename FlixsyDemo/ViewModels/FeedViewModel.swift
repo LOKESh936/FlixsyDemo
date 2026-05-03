@@ -13,11 +13,11 @@ final class FeedViewModel: ObservableObject {
         self.service = service
     }
 
-    func loadFeed() async {
+    func loadVideos() async {
         isLoading = true
         defer { isLoading = false }
         do {
-            posts = try await service.fetchFeed()
+            posts = try await service.fetchVideos()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -32,9 +32,8 @@ final class FeedViewModel: ObservableObject {
 
         Task {
             do {
-                try await wasLiked
-                    ? service.unlikePost(id: post.id)
-                    : service.likePost(id: post.id)
+                let confirmed = try await service.toggleLike(videoId: post.id, isLiked: !wasLiked)
+                posts[index].isLiked = confirmed
             } catch {
                 // Revert on failure
                 posts[index].isLiked = wasLiked

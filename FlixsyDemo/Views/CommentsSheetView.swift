@@ -4,8 +4,8 @@ struct CommentsSheetView: View {
     @StateObject private var viewModel: CommentsViewModel
     @FocusState private var isInputFocused: Bool
 
-    init(postID: String) {
-        _viewModel = StateObject(wrappedValue: CommentsViewModel(postID: postID))
+    init(videoId: String) {
+        _viewModel = StateObject(wrappedValue: CommentsViewModel(videoId: videoId))
     }
 
     var body: some View {

@@ -21,7 +21,7 @@ struct FeedView: View {
             }
         }
         .ignoresSafeArea()
-        .task { await viewModel.loadFeed() }
+        .task { await viewModel.loadVideos() }
     }
 
     // MARK: - Vertical paging feed
@@ -34,7 +34,7 @@ struct FeedView: View {
         TabView(selection: $viewModel.currentIndex) {
             ForEach(Array(viewModel.posts.enumerated()), id: \.element.id) { index, post in
                 VideoFeedCellView(
-                    post: viewModel.posts[index],   // index binding keeps like state reactive
+                    post: viewModel.posts[index],
                     isVisible: viewModel.currentIndex == index,
                     onLike: { viewModel.toggleLike(for: post) }
                 )
@@ -43,7 +43,6 @@ struct FeedView: View {
                 .tag(index)
             }
         }
-        // Swap dimensions so the rotated TabView fills the screen
         .frame(width: screen.height, height: screen.width)
         .rotationEffect(.degrees(90), anchor: .topLeading)
         .offset(x: screen.width)
@@ -63,7 +62,7 @@ struct FeedView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
             Button("Try Again") {
-                Task { await viewModel.loadFeed() }
+                Task { await viewModel.loadVideos() }
             }
             .buttonStyle(.bordered)
             .tint(.white)
