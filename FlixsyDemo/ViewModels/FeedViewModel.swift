@@ -1,16 +1,26 @@
 import Foundation
 import Combine
 
+// MARK: - Feed state
+
+enum FeedState {
+    case idle
+    case loading
+    case loaded
+    case failed(String)
+}
+
+// MARK: - FeedViewModel
+
 @MainActor
 final class FeedViewModel: ObservableObject {
 
     // MARK: - Published state
 
+    @Published private(set) var state: FeedState = .idle
     @Published private(set) var videos: [VideoPost] = []
-    @Published private(set) var isLoading = false
-    @Published private(set) var errorMessage: String?
     @Published var selectedVideo: VideoPost?   // non-nil = comments sheet open
-    @Published var currentVideoId: String?     // tracks which cell is visible; bound to scrollPosition
+    @Published var currentVideoId: String?     // bound to scrollPosition
 
     // MARK: - Dependencies
 
@@ -22,18 +32,21 @@ final class FeedViewModel: ObservableObject {
 
     // MARK: - Feed
 
+    func retryLoad() async {
+        state = .idle
+        await loadVideos()
+    }
+
     func loadVideos() async {
-        guard !isLoading else { return }
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
+        guard case .idle = state else { return }
+        state = .loading
 
         do {
             videos = try await service.fetchVideos()
-            // Auto-select first video so play/pause fires correctly on launch
             currentVideoId = videos.first?.id
+            state = .loaded
         } catch {
-            errorMessage = error.localizedDescription
+            state = .failed(error.localizedDescription)
         }
     }
 
@@ -54,7 +67,6 @@ final class FeedViewModel: ObservableObject {
         Task {
             do {
                 let confirmed = try await service.toggleLike(videoId: video.id, isLiked: !wasLiked)
-                // Sync with server-confirmed value (guards against rapid double-tap race)
                 videos[index].isLiked = confirmed
             } catch {
                 // Network failed — restore exact snapshot
@@ -72,5 +84,13 @@ final class FeedViewModel: ObservableObject {
 
     func closeComments() {
         selectedVideo = nil
+    }
+
+    // MARK: - Helpers
+
+    /// Returns the live version of a video from the array so cells always
+    /// reflect the latest like/comment state after an optimistic update.
+    func currentVersion(of video: VideoPost) -> VideoPost {
+        videos.first(where: { $0.id == video.id }) ?? video
     }
 }
