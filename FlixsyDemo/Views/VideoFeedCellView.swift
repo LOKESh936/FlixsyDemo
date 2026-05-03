@@ -17,7 +17,6 @@ struct VideoFeedCellView: View {
     let onLike: () -> Void
     let onComment: () -> Void
 
-    @State private var likeScale: CGFloat = 1.0
 
     var body: some View {
         ZStack {
@@ -177,94 +176,15 @@ struct VideoFeedCellView: View {
     // MARK: - Action rail (right side)
 
     private var actionRail: some View {
-        VStack(spacing: 20) {
-            likeButton
-            commentButton
-            shareButton
-        }
+        FeedActionButtonsView(
+            isLiked:      video.isLiked,
+            likeCount:    video.likeCount,
+            commentCount: video.commentCount,
+            onLike:       onLike,
+            onComment:    onComment
+        )
         .padding(.bottom, 8)
     }
-
-    private var likeButton: some View {
-        ActionButton(
-            icon: video.isLiked ? "heart.fill" : "heart",
-            label: video.likeCount.compactFormatted,
-            tint: video.isLiked ? FlixsyColor.accent : .white
-        ) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
-                likeScale = 1.35
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    likeScale = 1.0
-                }
-            }
-            onLike()
-        }
-        .scaleEffect(likeScale)
-    }
-
-    private var commentButton: some View {
-        ActionButton(
-            icon: "bubble.right",
-            label: video.commentCount.compactFormatted,
-            tint: .white,
-            action: onComment
-        )
-    }
-
-    private var shareButton: some View {
-        ActionButton(
-            icon: "arrowshape.turn.up.right",
-            label: nil,
-            tint: .white,
-            action: {}
-        )
-    }
 }
 
-// MARK: - Action Button
-
-private struct ActionButton: View {
-    let icon: String
-    let label: String?
-    let tint: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 5) {
-                ZStack {
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .frame(width: 50, height: 50)
-                        .shadow(color: .black.opacity(0.25), radius: 6, y: 3)
-
-                    Image(systemName: icon)
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(tint)
-                }
-
-                if let label {
-                    Text(label)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.white)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Helpers
-
-private extension Int {
-    var compactFormatted: String {
-        switch self {
-        case 1_000_000...: return String(format: "%.1fM", Double(self) / 1_000_000)
-        case 1_000...:     return String(format: "%.1fK", Double(self) / 1_000)
-        default:           return "\(self)"
-        }
-    }
-}
 
