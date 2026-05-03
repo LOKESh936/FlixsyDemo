@@ -2,12 +2,13 @@ import Foundation
 
 struct Comment: Identifiable {
     let id: String
+    let videoId: String
     let username: String
     let text: String
-    let timestamp: Date
+    let createdAt: Date
 
     var timeAgo: String {
-        let diff = Date().timeIntervalSince(timestamp)
+        let diff = Date().timeIntervalSince(createdAt)
         switch diff {
         case ..<60:    return "just now"
         case ..<3600:  return "\(Int(diff / 60))m ago"
