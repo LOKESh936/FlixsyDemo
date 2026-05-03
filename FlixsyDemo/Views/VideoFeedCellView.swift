@@ -17,23 +17,14 @@ struct VideoFeedCellView: View {
     let onLike: () -> Void
     let onComment: () -> Void
 
-    @StateObject private var looper: PlayerLooper
     @State private var likeScale: CGFloat = 1.0
-
-    init(video: VideoPost, isVisible: Bool, onLike: @escaping () -> Void, onComment: @escaping () -> Void) {
-        self.video     = video
-        self.isVisible = isVisible
-        self.onLike    = onLike
-        self.onComment = onComment
-        _looper = StateObject(wrappedValue: PlayerLooper(videoName: video.videoName))
-    }
 
     var body: some View {
         ZStack {
             // ── Video layer ──────────────────────────────────────────────
             Color.black.ignoresSafeArea()
 
-            VideoPlayerView(player: looper.player)
+            VideoPlayerView(videoName: video.videoName, isVisible: isVisible)
                 .ignoresSafeArea()
 
             // ── Gradient overlay ─────────────────────────────────────────
@@ -47,11 +38,6 @@ struct VideoFeedCellView: View {
             }
             .ignoresSafeArea(edges: .top)
         }
-        .onChange(of: isVisible) { _, visible in
-            visible ? looper.play() : looper.pause()
-        }
-        .onAppear    { if isVisible { looper.play() } }
-        .onDisappear { looper.pause() }
     }
 
     // MARK: - Gradient
@@ -282,14 +268,3 @@ private extension Int {
     }
 }
 
-private extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let r = Double((int >> 16) & 0xFF) / 255
-        let g = Double((int >> 8)  & 0xFF) / 255
-        let b = Double(int         & 0xFF) / 255
-        self.init(red: r, green: g, blue: b)
-    }
-}
