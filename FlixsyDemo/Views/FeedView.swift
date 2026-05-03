@@ -14,7 +14,7 @@ struct FeedView: View {
                 ProgressView()
                     .tint(.white)
                     .scaleEffect(1.4)
-            } else if let error = viewModel.errorMessage, viewModel.posts.isEmpty {
+            } else if let error = viewModel.errorMessage, viewModel.videos.isEmpty {
                 errorView(message: error)
             } else {
                 verticalFeed
@@ -22,6 +22,12 @@ struct FeedView: View {
         }
         .ignoresSafeArea()
         .task { await viewModel.loadVideos() }
+        // Comments sheet is driven by selectedVideo in the ViewModel — single source of truth
+        .sheet(item: $viewModel.selectedVideo) { video in
+            CommentsSheetView(videoId: video.id)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - Vertical paging feed
@@ -32,11 +38,12 @@ struct FeedView: View {
 
     private var verticalFeed: some View {
         TabView(selection: $viewModel.currentIndex) {
-            ForEach(Array(viewModel.posts.enumerated()), id: \.element.id) { index, post in
+            ForEach(Array(viewModel.videos.enumerated()), id: \.element.id) { index, video in
                 VideoFeedCellView(
-                    post: viewModel.posts[index],
+                    video: viewModel.videos[index],
                     isVisible: viewModel.currentIndex == index,
-                    onLike: { viewModel.toggleLike(for: post) }
+                    onLike: { viewModel.toggleLike(for: video) },
+                    onComment: { viewModel.openComments(for: video) }
                 )
                 .rotationEffect(.degrees(-90))
                 .frame(width: screen.width, height: screen.height)

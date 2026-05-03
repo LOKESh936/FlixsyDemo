@@ -1,21 +1,21 @@
 import SwiftUI
 
 struct FeedActionButtonsView: View {
-    let post: VideoPost
+    let video: VideoPost
     let onLike: () -> Void
     let onComment: () -> Void
 
     var body: some View {
         VStack(spacing: 22) {
             ActionButton(
-                systemImage: post.isLiked ? "heart.fill" : "heart",
-                label: post.likeCount.compactFormatted,
-                tint: post.isLiked ? .red : .white,
+                systemImage: video.isLiked ? "heart.fill" : "heart",
+                label: video.likeCount.compactFormatted,
+                tint: video.isLiked ? .red : .white,
                 action: onLike
             )
             ActionButton(
                 systemImage: "bubble.right",
-                label: post.commentCount.compactFormatted,
+                label: video.commentCount.compactFormatted,
                 tint: .white,
                 action: onComment
             )

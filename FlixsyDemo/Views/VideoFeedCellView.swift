@@ -1,18 +1,19 @@
 import SwiftUI
 
 struct VideoFeedCellView: View {
-    let post: VideoPost
+    let video: VideoPost
     let isVisible: Bool
     let onLike: () -> Void
+    let onComment: () -> Void
 
     @StateObject private var looper: PlayerLooper
-    @State private var showComments = false
 
-    init(post: VideoPost, isVisible: Bool, onLike: @escaping () -> Void) {
-        self.post = post
+    init(video: VideoPost, isVisible: Bool, onLike: @escaping () -> Void, onComment: @escaping () -> Void) {
+        self.video = video
         self.isVisible = isVisible
         self.onLike = onLike
-        _looper = StateObject(wrappedValue: PlayerLooper(videoName: post.videoName))
+        self.onComment = onComment
+        _looper = StateObject(wrappedValue: PlayerLooper(videoName: video.videoName))
     }
 
     var body: some View {
@@ -32,12 +33,12 @@ struct VideoFeedCellView: View {
             VStack {
                 Spacer()
                 HStack(alignment: .bottom, spacing: 0) {
-                    postInfo
+                    videoInfo
                     Spacer(minLength: 12)
                     FeedActionButtonsView(
-                        post: post,
+                        video: video,
                         onLike: onLike,
-                        onComment: { showComments = true }
+                        onComment: onComment
                     )
                     .padding(.trailing, 12)
                     .padding(.bottom, 4)
@@ -49,29 +50,24 @@ struct VideoFeedCellView: View {
         .onChange(of: isVisible) { visible in
             visible ? looper.play() : looper.pause()
         }
-        .onAppear  { if isVisible { looper.play() } }
+        .onAppear   { if isVisible { looper.play() } }
         .onDisappear { looper.pause() }
-        .sheet(isPresented: $showComments) {
-            CommentsSheetView(videoId: post.id)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-        }
     }
 
-    private var postInfo: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(post.userDisplayName)
+    private var videoInfo: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(video.userDisplayName)
                 .font(.headline.weight(.bold))
                 .foregroundStyle(.white)
-            Text(post.username)
+            Text(video.username)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.white.opacity(0.75))
-            Text(post.caption)
+            Text(video.caption)
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.9))
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
-            Label(post.audioTitle, systemImage: "music.note")
+            Label(video.audioTitle, systemImage: "music.note")
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.8))
         }
